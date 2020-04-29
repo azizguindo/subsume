@@ -23,14 +23,19 @@ module Signature (
 import Datatypes (FunName, TypeName, Decl(..), Signature(..))
 import Data.List ( find )
 import Data.Maybe ( fromJust )
+import Debug.Trace 
+import Control.Monad
+
 
 _funName (Decl f _ _) = f
+_funName2 (Decl f t _) tys = f
 _domain (Decl _ d _) = d
 _range (Decl _ _ r) = r
 
 decl :: Signature -> FunName -> Decl
 decl (Signature ctors funs) f = unpack (find hasF (ctors ++ funs))
-  where hasF (Decl g _ _) = f == g
+  where 
+        hasF (Decl g _ _) = f == g
         unpack (Just d) = d
         unpack Nothing = error (show f ++ " is not declared")
 
@@ -38,14 +43,15 @@ domain :: Signature -> FunName -> [TypeName]
 domain sig f = _domain (decl sig f)
 
 range :: Signature -> FunName -> TypeName
-range sig f = _range (decl sig f)
+range sig f = _range (decl sig f) 
 
 arity :: Signature -> FunName -> Int
 arity sig f = length (domain sig f)
 
 ctorsOfRange :: Signature -> TypeName -> [FunName]
 ctorsOfRange (Signature ctors _) ty = map _funName (filter hasRangeTy ctors)
-  where hasRangeTy (Decl _ _ ty') = ty == ty'
+  where 
+    hasRangeTy (Decl _ t ty') = (t == []) && (ty == ty') 
 
 ctorsOfSameRange :: Signature -> FunName -> [FunName]
 ctorsOfSameRange sig f = ctorsOfRange sig (range sig f)

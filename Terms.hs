@@ -16,12 +16,15 @@ module Terms (
   Substitution,
   substitute,
   renameUnderscores,
-  matches
+  matches,
+  containsVar,
+  rulewithVar
 ) where
 
 import Datatypes
 import qualified Data.Map.Strict as M
 import Control.Monad.State.Strict (evalState, get, put)
+import Debug.Trace
 
 type Substitution = M.Map VarName Term
 
@@ -55,3 +58,20 @@ matches (Alias _ t) u = matches t u
 matches t (Alias _ u) = matches t u
 matches (Var _) t = True
 matches _ _ = False
+
+containsVar :: Term -> Bool
+containsVar t = containsVar' t
+  where 
+    containsVar' (Appl f ts) = or (map isVar ts)
+      where 
+        isVar (Var _) = True
+        isVar (Appl g ps) = containsVar' (Appl g ps)
+        isVar _ = False
+    containsVar' _ = False
+
+rulewithVar :: Rule -> Bool
+rulewithVar t = rulewithVar' t
+  where 
+    rulewithVar' (Rule lhs rhs) = containsVar lhs
+      
+

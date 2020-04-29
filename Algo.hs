@@ -14,7 +14,7 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module Algo (otrsToTrs) where
+module Algo (mergeTrs) where
 
 import Debug.Trace
 import Data.List ( intercalate, tails, inits )
@@ -26,6 +26,7 @@ import Signature
 import Control.Monad.Writer.Strict (Writer, runWriter, tell)
 import Terms
 import Maranget
+import Data.List
 
 isBottom :: Term -> Bool
 isBottom Bottom = True
@@ -52,11 +53,13 @@ complement sig p1 p2 = p1 \\ p2
     alias x Bottom = Bottom
     alias x t = Alias x t
 
+    a \\ b | trace (show a ++ "\\" ++ show b) False = undefined
     u \\ (Var _) = Bottom
     u \\ Bottom = u
     (Var x) \\ p@(Appl g ps) = alias x (sum [pattern f \\ p | f <- fs])
       where fs = ctorsOfSameRange sig g
             pattern f = Appl f (replicate (arity sig f) (Var "_"))
+    
     Bottom \\ Appl _ _ = Bottom
     Appl f ps \\ Appl g qs
         | f /= g || someUnchanged = appl f ps
@@ -67,6 +70,7 @@ complement sig p1 p2 = p1 \\ p2
     Alias x p1 \\ p2 = alias x (p1 \\ p2)
     p1 \\ Alias x p2 = p1 \\ p2
     p \\ (Plus p1 p2) = (p \\ p1) \\ p2
+
 
 preMinimize :: [Term] -> [Term]
 preMinimize patterns = filter (not . isMatched) patterns
@@ -91,6 +95,8 @@ removePlusses (Alias x p) = S.map (Alias x) (removePlusses p)
 removePlusses (Var x) = S.singleton (Var x)
 removePlusses Bottom = S.empty
 
+
+
 removeAliases :: Rule -> Rule
 removeAliases (Rule lhs rhs) = Rule lhs' (substitute subst rhs)
   where (lhs', subst) = collectAliases (renameUnderscores lhs)
@@ -105,6 +111,7 @@ removeAliases (Rule lhs rhs) = Rule lhs' (substitute subst rhs)
           tell (M.singleton x t')
           return t'
 
+
 expandAnti :: Signature -> Term -> Term
 expandAnti sig t = expandAnti' t
   where expandAnti' (Appl f ts) = Appl f (map expandAnti' ts)
@@ -116,6 +123,7 @@ expandAnti sig t = expandAnti' t
 
 antiTrsToOtrs :: Signature -> [Rule] -> [Rule]
 antiTrsToOtrs sig rules = [Rule (expandAnti sig lhs) rhs | Rule lhs rhs <- rules]
+
 
 otrsToAdditiveTrs :: Signature -> [Rule] -> [Rule]
 otrsToAdditiveTrs sig rules = zipWith diff rules (inits patterns)
@@ -131,7 +139,78 @@ additiveTrsToAliasedTrs sig rules = concatMap transform rules
   where transform (Rule lhs rhs) = map (flip Rule rhs) (expand lhs)
         expand = minimize sig . preMinimize . S.toList . removePlusses
 
+fusionTrs :: Signature -> [Rule] -> [Rule]
+fusionTrs sig rules =map fst((filter snd (zip rules (map rulewithVar rules)))) ++ [last res] ++ (nonMerge rules (head res))
+  where 
+    nonMerge rs (Rule lhs rhs) = map fst(filter snd(zip rs (map sameReturn rs)))
+      where 
+        rig (Rule lh rh) = rh
+        sameReturn (Rule _ rh ) = rhs /= rh
+    res = (scanl fusion' (head rules) (tail rules))
+      where 
+        fusion' (Rule lhs1 rhs1) (Rule lhs2 rhs2)  =  if (rhs1 == rhs2)
+                                                      then Rule (fusionleft lhs1 lhs2) rhs2
+                                                      else (Rule lhs1 rhs1)
+          where 
+            fusionleft (Appl f ts1) (Appl g ts2) = Appl f (map fusionleft' (zip ts1 ts2))
+              where
+                fusionleft' (Var x , Appl ff tts) = Appl ff tts
+                fusionleft' (Appl ff tts, Var x) = Appl ff tts
+                fusionleft' (Appl f1 ts11 , Appl g2 ts22) = if (and(ts11 == [],ts22 == []))
+                                                            then 
+                                                              if (f1 /= g2)
+                                                              then Plus (Appl f1 ts11) (Appl g2 ts22)
+                                                              else (Appl f1 ts11)
+                                                            else Appl f1 (map fusionleft' (zip ts11 ts22))
+                fusionleft' (Plus (Appl p1 ps1) p2 , Appl p3 ts22) = if (p1 /= p3 )
+                                                          then 
+                                                            if (p2 /= Appl p3 ts22 )
+                                                            then Plus (Plus (Appl p1 ps1) p2) (Appl p3 ts22)
+                                                            else Plus (Appl p1 ps1) p2
+                                                          else Plus (Appl p1 ps1) p2 
+                fusionleft' (Plus (Plus p3 p4) p5 , Appl p6 ts66) = if (p5 == Appl p6 ts66)
+                                                                    then fusionleft' ((Plus p3 p4),Appl p6 ts66)
+                                                                    else Plus (fusionleft' ((Plus p3 p4),Appl p6 ts66))  p5
+
+
+mergePlusses :: Signature -> [Rule] -> [Rule]
+mergePlusses sig rules = if ((map merge rules) == rules) 
+                        then []
+                        else map merge rules
+  where 
+    merge (Rule lhs rhs) = Rule (merge' lhs) rhs
+      where
+        merge' (Appl f ts) = Appl f (map mergePlus ts)
+          where 
+            mergePlus (Appl ff tts) = Appl ff (map mergePlus tts)
+            mergePlus (Plus (Appl p1 t1) (Appl p2 t2)) =  if (t1 == [])
+                                                          then
+                                                            if (t2 == [])
+                                                            then 
+                                                              if (listsEqual ( [p1] ++ [p2])  (ctorsOfSameRange sig p2))
+                                                              then Var "y"
+                                                              else Plus (Appl p1 t1) (Appl p2 t2)
+                                                            else Plus (Appl p1 t1) (Appl p2 (map mergePlus t2))
+                                                          else Plus (Appl p1 (map mergePlus t1)) (Appl p2 t2)
+            mergePlus (Plus (Plus p1 p2) (Appl p3 t3)) =  if (listsEqual ((funNames (Plus p1 p2)) ++ [p3])  (ctorsOfSameRange sig p3))
+                                                          then Var "y"
+                                                          else Plus (Plus p1 p2) (Appl p3 t3)
+                                                            where
+                                                                  funNames (Plus pp1 (Appl pp2 _)) = (funNames pp1) ++ [pp2]
+                                                                  funNames (Appl f ts) = [f]
+            mergePlus (Var x) = Var x
+            
+            
+listsEqual :: [FunName] -> [FunName] -> Bool
+listsEqual x y = null (x \\ y) && null (y \\ x)
+
 otrsToTrs sig = aliasedTrsToTrs
               . additiveTrsToAliasedTrs sig
               . otrsToAdditiveTrs sig
               . antiTrsToOtrs sig
+            
+mergeTrs sig = aliasedTrsToTrs
+              .additiveTrsToAliasedTrs sig
+              .mergePlusses sig
+              . fusionTrs sig
+
