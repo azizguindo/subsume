@@ -22,16 +22,7 @@ paint : car -> color
 
 RULES
 
-paint(car(x,suv())) -> red
-paint(car(electric(),family())) -> blue
-paint(car(electric(),van())) -> blue
-paint(car(diesel(),family())) -> red
-paint(car(diesel(),van())) -> red
-paint(car(hybrid(),family())) -> white
-paint(car(hybrid(),van())) -> white
-paint(car(gas(),family())) -> white
-paint(car(gas(),van())) -> white
+paint(car(diesel(),g(family()))) -> red()
+paint(car(x,g(suv()))) -> red()
+paint(car(diesel(),g(van()))) -> red()
 
-// paint(car(diesel(),g(family()))) -> red()
-// paint(car(x,g(suv()))) -> red()
-// paint(car(diesel(),g(van()))) -> red()
