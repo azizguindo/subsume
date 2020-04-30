@@ -176,7 +176,7 @@ fusionTrs sig rules = concat (map fusionTrs' rulesbyType)
                                                                         else Plus (fusionleft' ((Plus p3 p4),Appl p6 ts66))  p5
 
 mergePlusses :: Signature -> [Rule] -> [Rule]
-mergePlusses a b | trace ("fusionleft' : " ++  "  " ++ show b) False = undefined
+--mergePlusses a b | trace ("fusionleft' : " ++  "  " ++ show b) False = undefined
 mergePlusses sig rules = rmdups(map merge rules)
   where 
     merge (Rule lhs rhs) = Rule (merge' lhs) rhs
