@@ -1,0 +1,28 @@
+CONSTRUCTORS
+
+car : engine * type -> car
+f : engine -> engine
+g : engine * engine -> engine
+
+electric : engine
+diesel : engine
+hybrid : engine
+gas : engine
+
+family : type
+van : type
+suv : type
+
+red : color
+blue : color
+white : color
+
+FUNCTIONS
+
+paint : car -> color
+
+RULES
+
+paint(car(x,suv())) -> f(x)
+paint(car(y,family())) -> f(y)
+paint(car(z,van())) -> f(z)
