@@ -23,6 +23,11 @@ paint : car -> color
 
 RULES
 
-paint(car(x,suv())) -> f(x)
-paint(car(y,family())) -> f(y)
-paint(car(z,van())) -> f(z)
+paint(car(x1,suv())) -> f(x1)
+paint(car(y,x)) -> g(y,x)
+paint(car(z,van())) -> g(z,z)
+
+
+paint(car(x1,suv())) -> f(x1)
+paint(car(x1,x2)) -> g(x1,x2)
+paint(car(x1,van())) -> g(x1,x1)
