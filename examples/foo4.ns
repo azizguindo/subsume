@@ -1,0 +1,25 @@
+CONSTRUCTORS
+
+f : A -> A
+g : A * A -> A
+H : A * A * A -> A
+
+a : A
+b : A
+c : A
+
+d : B
+
+
+FUNCTIONS
+
+foo : A -> A
+
+RULES
+
+foo(h(a(),a(), b())) -> a
+foo(h(x,  b(), b())) -> a
+foo(h(a(),c(), a())) -> a
+foo(h(a(),c(), b())) -> a
+foo(h(a(),c(), c())) -> a
+
