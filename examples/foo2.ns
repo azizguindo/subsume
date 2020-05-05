@@ -18,6 +18,6 @@ foo : A -> A
 RULES
 
 foo(h(x,a(),a())) -> a
-foo(h(x,a(),b())) -> a
-foo(h(x,a(),c())) -> a
+foo(h(z,a(),b())) -> a
+foo(h(y,a(),c())) -> a
 
