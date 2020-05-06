@@ -24,4 +24,4 @@ main = do
   s <- readFile filename
   case parseModule filename s of
     Left err -> putStrLn (show err)
-    Right (Module sig trs) -> mapM_ print (mergeTrs sig trs)
+    Right (Module sig trs) -> mapM_ print (otrsToTrs sig trs)

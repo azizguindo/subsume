@@ -18,7 +18,9 @@ module Terms (
   renameUnderscores,
   matches,
   containsVar,
-  rulewithVar
+  rulewithVar,
+  containsBottom,
+  rulewithBottom
 ) where
 
 import Datatypes
@@ -73,5 +75,20 @@ rulewithVar :: Rule -> Bool
 rulewithVar t = rulewithVar' t
   where 
     rulewithVar' (Rule lhs rhs) = containsVar lhs
+
+containsBottom :: Term -> Bool
+containsBottom t = containsBottom' t
+  where 
+    containsBottom' (Appl f ts) = or (map isBottom ts)
+      where 
+        isBottom (Bottom) = True
+        isBottom (Appl g ps) = containsBottom' (Appl g ps)
+        isBottom _ = False
+    containsBottom' _ = False
+
+rulewithBottom :: Rule -> Bool
+rulewithBottom t = rulewithBottom' t
+  where 
+    rulewithBottom' (Rule lhs rhs) = containsBottom lhs
       
 

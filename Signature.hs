@@ -17,7 +17,9 @@ module Signature (
   range,
   arity,
   ctorsOfRange,
-  ctorsOfSameRange
+  ctorsOfRange2,
+  ctorsOfSameRange,
+  ctorsOfSameRange2
 ) where
 
 import Datatypes (FunName, TypeName, Decl(..), Signature(..))
@@ -51,8 +53,16 @@ arity sig f = length (domain sig f)
 ctorsOfRange :: Signature -> TypeName -> [FunName]
 ctorsOfRange (Signature ctors _) ty = map _funName (filter hasRangeTy ctors)
   where 
+    hasRangeTy (Decl _ t ty') = ty == ty'
+
+ctorsOfRange2 :: Signature -> TypeName -> [FunName]
+ctorsOfRange2 (Signature ctors _) ty = map _funName (filter hasRangeTy ctors)
+  where 
     hasRangeTy (Decl _ t ty') = (t == []) && (ty == ty') 
 
 ctorsOfSameRange :: Signature -> FunName -> [FunName]
 ctorsOfSameRange sig f = ctorsOfRange sig (range sig f)
+
+ctorsOfSameRange2 :: Signature -> FunName -> [FunName]
+ctorsOfSameRange2 sig f = ctorsOfRange2 sig (range sig f)
 
