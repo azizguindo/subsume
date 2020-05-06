@@ -1,8 +1,8 @@
 CONSTRUCTORS
 
 f : A -> A
-h : A * A * A -> A
-  
+g : A * A -> A
+
 a : A
 b : A
 
