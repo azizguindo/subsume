@@ -2,7 +2,7 @@ CONSTRUCTORS
 
 f : A -> A
 g : A * A -> A
-H : A * A * A -> A
+h : A * A * A -> A
 
 a : A
 b : A
@@ -20,4 +20,8 @@ RULES
 foo(g(a(),a())) -> a
 foo(g(a(),b())) -> a
 foo(g(a(),c())) -> a
+foo(g(a(),f(x1))) -> a
+foo(g(a(),g(x1,x2))) -> a
+foo(g(a(),h(x1,x2,x3))) -> a
+
 

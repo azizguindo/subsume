@@ -2,7 +2,7 @@ CONSTRUCTORS
 
 f : A -> A
 g : A * A -> A
-H : A * A * A -> A
+h : A * A * A -> A
 
 a : A
 b : A
