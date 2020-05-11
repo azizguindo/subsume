@@ -24,3 +24,8 @@ RULES
 paint(car(x,suv())) -> x
 paint(car(x,family())) -> x
 paint(car(x,van())) -> x
+
+
+// paint(car(x,suv())) -> a()
+// paint(car(x,family())) -> a()
+// paint(car(x,van())) -> a()
