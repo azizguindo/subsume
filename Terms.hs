@@ -19,8 +19,7 @@ module Terms (
   matches,
   containsVar,
   rulewithVar,
-  containsBottom,
-  rulewithBottom
+  isVar
 ) where
 
 import Datatypes
@@ -65,30 +64,18 @@ containsVar :: Term -> Bool
 containsVar t = containsVar' t
   where 
     containsVar' (Appl f ts) = or (map isVar ts)
-      where 
-        isVar (Var _) = True
-        isVar (Appl g ps) = containsVar' (Appl g ps)
-        isVar _ = False
     containsVar' _ = False
+
+isVar :: Term -> Bool
+isVar (Var _) = True
+isVar (Appl g ps) = containsVar (Appl g ps)
+isVar _ = False
 
 rulewithVar :: Rule -> Bool
 rulewithVar t = rulewithVar' t
   where 
     rulewithVar' (Rule lhs rhs) = containsVar lhs
 
-containsBottom :: Term -> Bool
-containsBottom t = containsBottom' t
-  where 
-    containsBottom' (Appl f ts) = or (map isBottom ts)
-      where 
-        isBottom (Bottom) = True
-        isBottom (Appl g ps) = containsBottom' (Appl g ps)
-        isBottom _ = False
-    containsBottom' _ = False
 
-rulewithBottom :: Rule -> Bool
-rulewithBottom t = rulewithBottom' t
-  where 
-    rulewithBottom' (Rule lhs rhs) = containsBottom lhs
       
 

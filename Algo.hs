@@ -27,6 +27,7 @@ import Control.Monad.Writer.Strict (Writer, runWriter, tell)
 import Terms
 import Maranget
 import Data.List
+import Data.Char
 
 isBottom :: Term -> Bool
 isBottom Bottom = True
@@ -148,12 +149,12 @@ fusionTrs sig rules = concat (map fusionTrs' rulesbyType)
           where 
             sameReturn' (Rule _ rh ) = t == rh
         rig (Rule lh rh) = rh
-    --fusionTrs' r | trace ("fusiontrs :  " ++  show (preFusion sig r)) False = undefined
+    --fusionTrs' r | trace ("fusiontrs :  " ++ show ( (preFusion sig r)) ++"      |     " ++ show r) False = undefined
     fusionTrs' rules = res
       where
         res = if (length rul < 2)
               then [last (scanl fusion (head rules) (tail rules ))]
-              else rul 
+              else rul--(scanl fusion (head rules) (tail rules ))--(scanl fusion (head rul) (tail rul))
           where 
             rul = preFusion sig rules
               
@@ -161,14 +162,15 @@ preFusion :: Signature -> [Rule] -> [Rule]
 --preFusion a b| trace ("prefusion : " ++ show b) False = undefined
 preFusion sig rules =  preMergePlusses sig resf 
   where 
-    resf = (map res sublistsrules)  ++ concat(sublistsrules) 
+    resf = (map res sublistsrules) -- ++ concat(sublistsrules) 
       where
-        sublistsrules = map fst (filter (\ x-> (snd x) == 3) (zip (sublists rules) (map length (sublists rules))))
-        --res a | trace ("rules : " ++ show a ++ ",res : " ++ show (foldl fusion (head a) (tail a))) False = undefined
+        sublistsrules = map fst (filter (\ x-> (snd x) > 1) (zip (sublists rules) (map length (sublists rules))))
+        --res a | trace ("rules : " ++ show a ++ " res : " ++ show((foldl fusion (head a) (tail a))) ) False = undefined
         res rul = (foldl fusion (head rul) (tail rul))
 
 
 fusion :: Rule -> Rule -> Rule
+--fusion r1 r2 | trace ("fusion : " ++ show r1 ++ " | " ++ show r2) False = undefined
 fusion r1 r2 = fusion' r1 r2
   where
     fusion' (Rule lhs1 rhs1) (Rule lhs2 rhs2)  =  if (rhs1 == rhs2)
@@ -178,7 +180,7 @@ fusion r1 r2 = fusion' r1 r2
         --fusionleft (Appl f ts1) (Appl g ts2) | trace ("fusionleft : " ++ show (zip ts1 ts2)) False = undefined
         fusionleft (Appl f ts1) (Appl g ts2) = Appl f (map fusionleft' (zip ts1 ts2))
           where
-          --fusionleft' (a , b) | trace ("fusionleft' : " ++ show a ++ "  |  " ++ show b) False = undefined
+          --fusionleft' (a,b) | trace ("fusionleft' : " ++ show a ++ "  |  " ++ show b) False = undefined
           fusionleft' (Var x , Appl ff tts) = Appl ff tts
           fusionleft' (Appl ff tts, Var x) = Appl ff tts
           fusionleft' (Var y, Var x) = Var x
@@ -189,16 +191,22 @@ fusion r1 r2 = fusion' r1 r2
                                                           if (f1 /= g2)
                                                           then Plus (Appl f1 ts11) (Appl g2 ts22)
                                                           else (Appl f1 ts11)
-                                                         else Appl f1 (map fusionleft' (zip ts11 ts22))
-                                                      else 
-                                                        if (((length . filter(==False)) (zipWith (==) ts11  ts22) == 2) && (rulewithVar (Rule lhs1 rhs1) || rulewithVar (Rule lhs2 rhs2)))
-                                                        then 
-                                                         if (and(ts11 == [],ts22 == []))
-                                                          then 
-                                                            if (f1 /= g2)
-                                                            then Plus (Appl f1 ts11) (Appl g2 ts22)
-                                                            else (Appl f1 ts11)
+                                                        else 
+                                                          if ((and(map isVar ts11)) && (and(map isVar ts22)))
+                                                          then Plus (Appl f1 ts11) (Appl g2 ts22)
                                                           else Appl f1 (map fusionleft' (zip ts11 ts22))
+                                                      else 
+                                                        if((length . filter(==False)) (zipWith (==) ts11  ts22) == 2) 
+                                                        then 
+                                                          if (rulewithVar (Rule lhs1 rhs1))  
+                                                          then 
+                                                            if (not(rulewithVar (Rule lhs2 rhs2))) 
+                                                            then (Appl f1 (map fusionleft' (zip ts11 ts22)))
+                                                            else Plus (Appl f1 ts11) (Appl g2 ts22)
+                                                          else
+                                                            if (not(rulewithVar (Rule lhs1 rhs1))) 
+                                                            then Plus (Appl f1 ts11) (Appl g2 ts22)
+                                                            else Appl g2 (map fusionleft' (zip ts11 ts22))
                                                         else Plus (Appl f1 ts11) (Appl g2 ts22)
           fusionleft' (Plus (Appl p1 ps1) p2 , Appl p3 ts22) =  if (p1 /= p3 )
                                                                 then 
@@ -209,62 +217,54 @@ fusion r1 r2 = fusion' r1 r2
           fusionleft' (Plus (Plus p3 p4) p5 , Appl p6 ts66) = if (p5 == Appl p6 ts66)
                                                               then fusionleft' ((Plus p3 p4),Appl p6 ts66)
                                                               else Plus (fusionleft' ((Plus p3 p4),Appl p6 ts66))  p5
+          {-fusionleft' (Plus p1 p2, Var x) = Var x
+          fusionleft' (Plus p1 p2, Plus p3 p4) = Plus p1 p2
+          fusionleft' (Appl p1 ts1, Plus (Appl p2 ts2) p3) = if (p2 /= p1 )
+                                                                then 
+                                                                  if (p3 /= Appl p1 ts1 )
+                                                                  then Plus (Plus (Appl p2 ts2) p3) (Appl p1 ts1)
+                                                                  else Plus (Appl p2 ts2) p3
+                                                                else Plus (Appl p2 ts2) p3-} 
 
 
 mergePlusses :: Signature -> [Rule] -> [Rule]
---mergePlusses a b | trace ("mergePlusses :   " ++ show (rmdups(b))) False = undefined
-mergePlusses sig rules = rmdups(map merge rules)
-  where 
-    merge (Rule lhs rhs) = Rule (merge' lhs) rhs
-      where
-        merge' (Appl f ts) = Appl f (map mergePlus ts)
-          where 
-            mergePlus (Appl ff tts) = Appl ff (map mergePlus tts)
-            mergePlus (Plus (Appl p1 t1) (Appl p2 t2)) =  if (t1 == [])
-                                                          then
-                                                            if (t2 == [])
-                                                            then 
-                                                              if (listsEqual ( [p1] ++ [p2])  (ctorsOfSameRange2 sig p2))
-                                                              then Var "y"
-                                                              else Plus (Appl p1 t1) (Appl p2 t2)
-                                                            else Plus (Appl p1 t1) (Appl p2 (map mergePlus t2))
-                                                          else Plus (Appl p1 (map mergePlus t1)) (Appl p2 t2)
-            mergePlus (Plus (Plus p1 p2) (Appl p3 t3)) =  if (listsEqual ((funNames (Plus p1 p2)) ++ [p3])  (ctorsOfSameRange2 sig p3))
-                                                          then Var "y"
-                                                          else Plus (Plus p1 p2) (Appl p3 t3)
-                                                            where
-                                                                  funNames (Plus pp1 (Appl pp2 _)) = (funNames pp1) ++ [pp2]
-                                                                  funNames (Appl f ts) = [f]
-            mergePlus (Var x) = Var x
-            mergePlus (Alias x t) = Alias x t
+--mergePlusses a b | trace ("mergePlusses :   " ++ show ([x : y : [] | x <- "_", y <- ['1'..intToDigit(length b)]])) False = undefined
+mergePlusses sig rules = rmdups(map (merge sig) rules)
 
 preMergePlusses :: Signature -> [Rule] -> [Rule]
---preMergePlusses a b | trace ("preMergePlusses : "  ++ show a) False = undefined
-preMergePlusses sig rules = map fst((filter snd (zip (rmdups(map merge rules)) (map rulewithVar (rmdups(map merge rules)))))) 
-  where 
-    merge (Rule lhs rhs) = Rule (merge' lhs) rhs
-      where
-        merge' (Appl f ts) = Appl f (map mergePlus ts)
+--preMergePlusses a b | trace ("preMergePlusses : "  ++ show (rmdups(b))) False = undefined
+preMergePlusses sig rules = map fst((filter snd (zip (rmdups(map (merge sig) rules)) (map rulewithVar (rmdups(map (merge sig) rules)))))) 
+
+merge :: Signature -> Rule -> Rule
+merge sig rule = merge' rule 
+  where
+    merge' (Rule lhs rhs) = Rule (merge'' lhs) rhs
+      where 
+        i = 0
+        merge'' (Appl f ts) = Appl f (map mergePlus ts)
           where 
+            --mergePlus (Plus (Plus p1 p2) (Appl p3 t3)) | trace ("mergePlus :" ++ show (varlist)) False = undefined
             mergePlus (Appl ff tts) = Appl ff (map mergePlus tts)
             mergePlus (Plus (Appl p1 t1) (Appl p2 t2)) =  if (t1 == [])
                                                           then
                                                             if (t2 == [])
                                                             then 
                                                               if (listsEqual ( [p1] ++ [p2])  (ctorsOfSameRange2 sig p2))
-                                                              then Var "y"
+                                                              then Var "_"
                                                               else Plus (Appl p1 t1) (Appl p2 t2)
                                                             else Plus (Appl p1 t1) (Appl p2 (map mergePlus t2))
                                                           else Plus (Appl p1 (map mergePlus t1)) (Appl p2 t2)
             mergePlus (Plus (Plus p1 p2) (Appl p3 t3)) =  if (listsEqual ((funNames (Plus p1 p2)) ++ [p3])  (ctorsOfSameRange2 sig p3))
-                                                          then Var "y"
+                                                          then Var "_"
                                                           else Plus (Plus p1 p2) (Appl p3 t3)
                                                             where
-                                                                  funNames (Plus pp1 (Appl pp2 _)) = (funNames pp1) ++ [pp2]
-                                                                  funNames (Appl f ts) = [f]
+                                                              funNames (Plus pp1 (Appl pp2 _)) = (funNames pp1) ++ [pp2]
+                                                              funNames (Appl f ts) = [f]
             mergePlus (Var x) = Var x
             mergePlus (Alias x t) = Alias x t
             
+varList :: Int -> [[Char]]
+varList i = zipWith (++) (replicate i "x") (map show [1..i])
 
 listsEqual :: [FunName] -> [FunName] -> Bool
 listsEqual x y = null (x \\ y) && null (y \\ x)
@@ -283,7 +283,8 @@ otrsToTrs sig = aliasedTrsToTrs
               . otrsToAdditiveTrs sig
               . antiTrsToOtrs sig
             
-mergeTrs sig = aliasedTrsToTrs
+mergeTrs sig = rmdups
+              .aliasedTrsToTrs
               .additiveTrsToAliasedTrs sig
               .mergePlusses sig
               . fusionTrs sig

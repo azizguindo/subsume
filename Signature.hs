@@ -64,5 +64,5 @@ ctorsOfSameRange :: Signature -> FunName -> [FunName]
 ctorsOfSameRange sig f = ctorsOfRange sig (range sig f)
 
 ctorsOfSameRange2 :: Signature -> FunName -> [FunName]
-ctorsOfSameRange2 sig f = ctorsOfRange2 sig (range sig f)
+ctorsOfSameRange2 sig f = ctorsOfRange sig (range sig f)
 

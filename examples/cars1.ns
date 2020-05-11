@@ -1,7 +1,6 @@
 CONSTRUCTORS
 
 car : engine * type -> car
-g : type -> type
 
 electric : engine
 diesel : engine
