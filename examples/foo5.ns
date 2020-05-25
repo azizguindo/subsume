@@ -14,7 +14,54 @@ foo : A -> A
 RULES
 
 // EX - ok
+<<<<<<< HEAD
 // foo(h(x, y, a())) -> a()
+=======
+//foo(h(x, y, a())) -> a()
+
+
+// EX - not ok (probably need to apply subsume)
+// foo(h(x, a(), a())) -> a()
+// foo(h(x, b(), a())) -> a()
+// foo(h(x, f(y), a())) -> a()
+// foo(h(x, h(y1,y2,y3), a())) -> a()
+
+
+// EX - ok
+// foo(h(a(), a(), a())) -> a()
+// foo(h(a(), b(), a())) -> a()
+// foo(h(a(), f(y), a())) -> a()
+// foo(h(a(), h(y1,y2,y3), a())) -> a()
+
+
+// EX - not ok
+// foo(h(a(), y, b())) -> a()
+// foo(h(x, b(), a())) -> a()
+// foo(h(a(), b(), f(y))) -> a()
+// foo(h(a(), b(), h(y1,y2,y3))) -> a()
+
+
+// EX - not ok
+// foo(h(a(), a(), b())) -> a()
+// foo(h(a(), b(), b())) -> a()
+// foo(h(a(), f(y), b())) -> a()
+// foo(h(a(), h(y1,y2,y3), b())) -> a()
+// foo(h(x, b(), a())) -> a()
+// foo(h(a(), b(), f(y))) -> a()
+// foo(h(a(), b(), h(y1,y2,y3))) -> a()
+
+
+// EX - ok
+// foo(h(f(a()), a(), a())) -> a()
+// foo(h(f(a()), b(), a())) -> a()
+// foo(h(f(a()), f(y), a())) -> a()
+// foo(h(f(a()), h(y1,y2,y3), a())) -> a()
+
+
+// EX - not ok
+foo(h(a(), a(), a())) -> a()
+foo(h(a(), x, a())) -> a()
+>>>>>>> 53d63b7ba8b3a4aecc76303c951c9c305a43950c
 
 
 // EX - not ok (probably need to apply subsume)
