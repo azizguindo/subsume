@@ -68,7 +68,6 @@ containsVar t = containsVar' t
 
 isVar :: Term -> Bool
 isVar (Var _) = True
-isVar (Appl g ps) = containsVar (Appl g ps)
 isVar _ = False
 
 rulewithVar :: Rule -> Bool
